@@ -52,11 +52,19 @@ pnpm install
 # 環境変数の設定
 cp .env.example .env
 
-# Dockerコンテナの起動
-docker-compose up -d
+# 開発環境の起動（推奨）
+./scripts/start-dev.sh
+```
 
-# データベースマイグレーション
-pnpm run db:migrate
+### 手動セットアップ（オプション）
+
+```bash
+# インフラのみ起動
+docker-compose -f docker-compose.dev.yml up -d
+
+# Prismaの初期化
+cd services/team-service && pnpm prisma generate && cd ../..
+cd services/interaction-service && pnpm prisma generate && cd ../..
 
 # 開発サーバーの起動
 pnpm run dev
@@ -83,6 +91,7 @@ pnpm run build
 
 ## ドキュメント
 
+- [プロトタイプ実装ガイド](./PROTOTYPE.md)
 - [要件定義書](./REQUIREMENTS.md)
 - [システムアーキテクチャ](./ARCHITECTURE.md)
 

@@ -26,6 +26,7 @@
 
 ## 開発環境の起動方法
 
+### 方法1: 自動起動（推奨）
 ```bash
 # 1. 環境変数の設定（初回のみ）
 cp .env.example .env
@@ -33,6 +34,23 @@ cp .env.example .env
 # 2. 開発環境の起動
 ./scripts/start-dev.sh
 ```
+
+### 方法2: 手動起動
+```bash
+# 1. インフラのみ起動
+./scripts/start-dev-simple.sh
+
+# 2. 各サービスを個別のターミナルで起動
+# Terminal 1: cd services/team-service && pnpm dev
+# Terminal 2: cd services/interaction-service && pnpm dev
+# Terminal 3: cd services/gateway && pnpm dev
+# Terminal 4: cd frontend/web-app && pnpm dev
+```
+
+### トラブルシューティング
+- `concurrently`がインストールされていない場合は `pnpm install` を実行
+- Dockerが起動していることを確認
+- ポートが使用されていないことを確認（3000, 3001, 3002, 4000, 5432, 6379）
 
 ## アクセスURL
 

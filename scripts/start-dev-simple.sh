@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "Team Topology Viewer - Development Environment Setup"
-echo "===================================================="
+echo "Team Topology Viewer - Development Environment Setup (Simple)"
+echo "============================================================"
 
 # 環境変数ファイルのセットアップ
 echo "Setting up environment files..."
@@ -25,11 +25,9 @@ docker-compose -f docker-compose.dev.yml up -d
 
 # PostgreSQLの起動を待つ
 echo "Waiting for PostgreSQL to be ready..."
-until docker-compose -f docker-compose.dev.yml exec -T postgres pg_isready -U ttv_user > /dev/null 2>&1; do
-  sleep 1
-done
+sleep 5
 
-echo "PostgreSQL is ready!"
+echo "PostgreSQL should be ready!"
 
 # 依存関係のインストール
 echo "Installing dependencies..."
@@ -40,8 +38,22 @@ echo "Setting up Prisma..."
 cd services/team-service && pnpm prisma generate && cd ../..
 cd services/interaction-service && pnpm prisma generate && cd ../..
 
-# サービスの起動
-echo "Starting all services..."
+echo ""
+echo "Infrastructure is ready!"
+echo ""
+echo "Now start each service manually in separate terminals:"
+echo ""
+echo "Terminal 1 - Team Service:"
+echo "  cd services/team-service && pnpm dev"
+echo ""
+echo "Terminal 2 - Interaction Service:"
+echo "  cd services/interaction-service && pnpm dev"
+echo ""
+echo "Terminal 3 - GraphQL Gateway:"
+echo "  cd services/gateway && pnpm dev"
+echo ""
+echo "Terminal 4 - Web App:"
+echo "  cd frontend/web-app && pnpm dev"
 echo ""
 echo "Services will be available at:"
 echo "- GraphQL Gateway: http://localhost:4000/graphql"
@@ -49,7 +61,4 @@ echo "- Team Service: http://localhost:3001"
 echo "- Interaction Service: http://localhost:3002"
 echo "- Web App: http://localhost:3000"
 echo "- RabbitMQ Management: http://localhost:15672 (ttv_user/ttv_password)"
-echo ""
-
-# 開発サーバーの起動
-pnpm run dev
+echo "

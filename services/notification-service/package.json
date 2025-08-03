@@ -1,0 +1,15 @@
+{
+  "name": "@ttv/notification-service",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Notification service not implemented yet'",
+    "build": "echo 'Build not implemented'",
+    "start": "echo 'Start not implemented'",
+    "test": "echo 'No tests'",
+    "lint": "echo 'No linting'",
+    "typecheck": "echo 'No typecheck'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

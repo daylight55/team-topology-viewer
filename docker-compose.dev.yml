@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ttv-postgres
+    environment:
+      POSTGRES_USER: ttv_user
+      POSTGRES_PASSWORD: ttv_password
+      POSTGRES_DB: ttv_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ttv-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ttv-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ttv-network
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ttv-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ttv_user
+      RABBITMQ_DEFAULT_PASS: ttv_password
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ttv-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  ttv-network:
+    driver: bridge
