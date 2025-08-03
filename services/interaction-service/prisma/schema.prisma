@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["interaction_service"]
+}
+
+enum InteractionMode {
+  collaboration
+  x_as_a_service
+  facilitating
+
+  @@schema("interaction_service")
+}
+
+enum InteractionIntensity {
+  high
+  medium
+  low
+
+  @@schema("interaction_service")
+}
+
+enum DurationType {
+  temporary
+  permanent
+
+  @@schema("interaction_service")
+}
+
+model Interaction {
+  id              String                @id @default(uuid())
+  teamAId         String                @map("team_a_id")
+  teamBId         String                @map("team_b_id")
+  mode            InteractionMode
+  intensity       InteractionIntensity?
+  durationType    DurationType          @map("duration_type")
+  startDate       DateTime              @map("start_date") @db.Date
+  endDate         DateTime?             @map("end_date") @db.Date
+  purpose         String?
+  expectedOutcome String?               @map("expected_outcome")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  
+  history         InteractionHistory[]
+
+  @@map("interactions")
+  @@schema("interaction_service")
+}
+
+model InteractionHistory {
+  id            String      @id @default(uuid())
+  interactionId String      @map("interaction_id")
+  changedBy     String      @map("changed_by")
+  changeType    String      @map("change_type")
+  oldValue      Json?       @map("old_value")
+  newValue      Json?       @map("new_value")
+  changedAt     DateTime    @default(now()) @map("changed_at")
+  
+  interaction   Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@map("interaction_history")
+  @@schema("interaction_service")
+}
