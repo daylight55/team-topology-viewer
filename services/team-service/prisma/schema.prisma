@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["team_service"]
+}
+
+enum TeamType {
+  stream_aligned
+  platform
+  enabling
+  complicated_subsystem
+
+  @@schema("team_service")
+}
+
+enum ResponsibilityLevel {
+  primary
+  secondary
+  supporting
+
+  @@schema("team_service")
+}
+
+model Team {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  type           TeamType
+  description    String?
+  cognitiveLoad  Float?       @map("cognitive_load")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  
+  members        TeamMember[]
+  domains        TeamDomain[]
+
+  @@map("teams")
+  @@schema("team_service")
+}
+
+model TeamMember {
+  id       String    @id @default(uuid())
+  teamId   String    @map("team_id")
+  userId   String    @map("user_id")
+  role     String?
+  joinedAt DateTime  @default(now()) @map("joined_at")
+  leftAt   DateTime? @map("left_at")
+  
+  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+  @@schema("team_service")
+}
+
+model TeamDomain {
+  id                  String              @id @default(uuid())
+  teamId              String              @map("team_id")
+  domain              String
+  responsibilityLevel ResponsibilityLevel @map("responsibility_level")
+  
+  team                Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_domains")
+  @@schema("team_service")
+}

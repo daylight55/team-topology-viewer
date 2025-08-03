@@ -1,0 +1,249 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ttv-postgres
+    environment:
+      POSTGRES_USER: ttv_user
+      POSTGRES_PASSWORD: ttv_password
+      POSTGRES_DB: ttv_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ttv-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ttv-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ttv-network
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ttv-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ttv_user
+      RABBITMQ_DEFAULT_PASS: ttv_password
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ttv-network
+
+  # GraphQL Gateway
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile.dev
+    container_name: ttv-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      TEAM_SERVICE_URL: http://team-service:3001
+      INTERACTION_SERVICE_URL: http://interaction-service:3002
+      ANALYTICS_SERVICE_URL: http://analytics-service:3003
+      USER_SERVICE_URL: http://user-service:3004
+      NOTIFICATION_SERVICE_URL: http://notification-service:3005
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./services/gateway:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ttv-network
+
+  # Team Service
+  team-service:
+    build:
+      context: ./services/team-service
+      dockerfile: Dockerfile.dev
+    container_name: ttv-team-service
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://ttv_user:ttv_password@postgres:5432/ttv_db
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://ttv_user:ttv_password@rabbitmq:5672
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./services/team-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - ttv-network
+
+  # Interaction Service
+  interaction-service:
+    build:
+      context: ./services/interaction-service
+      dockerfile: Dockerfile.dev
+    container_name: ttv-interaction-service
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DATABASE_URL: postgresql://ttv_user:ttv_password@postgres:5432/ttv_db
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://ttv_user:ttv_password@rabbitmq:5672
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./services/interaction-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - ttv-network
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile.dev
+    container_name: ttv-analytics-service
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      DATABASE_URL: postgresql://ttv_user:ttv_password@postgres:5432/ttv_db
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://ttv_user:ttv_password@rabbitmq:5672
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./services/analytics-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - ttv-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile.dev
+    container_name: ttv-user-service
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      DATABASE_URL: postgresql://ttv_user:ttv_password@postgres:5432/ttv_db
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://ttv_user:ttv_password@rabbitmq:5672
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_CLIENT_SECRET: ${AUTH0_CLIENT_SECRET}
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./services/user-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - ttv-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile.dev
+    container_name: ttv-notification-service
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      DATABASE_URL: postgresql://ttv_user:ttv_password@postgres:5432/ttv_db
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://ttv_user:ttv_password@rabbitmq:5672
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./services/notification-service:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - ttv-network
+
+  # Web App (Remix)
+  web-app:
+    build:
+      context: ./frontend/web-app
+      dockerfile: Dockerfile.dev
+    container_name: ttv-web-app
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      GRAPHQL_ENDPOINT: http://localhost:4000/graphql
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_CALLBACK_URL: http://localhost:3000/callback
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/web-app:/app
+      - /app/node_modules
+    depends_on:
+      - gateway
+    networks:
+      - ttv-network
+
+  # Admin Panel (Remix)
+  admin-panel:
+    build:
+      context: ./frontend/admin-panel
+      dockerfile: Dockerfile.dev
+    container_name: ttv-admin-panel
+    environment:
+      NODE_ENV: development
+      PORT: 3100
+      GRAPHQL_ENDPOINT: http://localhost:4000/graphql
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_CLIENT_ID: ${AUTH0_ADMIN_CLIENT_ID}
+      AUTH0_CALLBACK_URL: http://localhost:3100/callback
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./frontend/admin-panel:/app
+      - /app/node_modules
+    depends_on:
+      - gateway
+    networks:
+      - ttv-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  ttv-network:
+    driver: bridge
